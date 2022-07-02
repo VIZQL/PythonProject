@@ -238,8 +238,108 @@ for i in range(0,5):
         pass
 
 
-################################ 3. 시장 주도 종목 정리 ########################################
-doc.add_heading('3. 시장 주도 종목 정리 : ', level = 1)
+################################ 3. 오전장 특징주  ########################################
+doc.add_heading('3. 오전장 특징주 : ', level = 1)
+
+
+try:
+    title1, stext1, text1 = Kangwon_stocks_info.notable_stocks("오전장 특징주★(코스닥)")
+    title2, stext2, text2 = Kangwon_stocks_info.notable_stocks("오전장 특징주★(코스피)")
+except:pass
+
+
+p = doc.add_paragraph()
+p.add_run("<코스닥>").bold = True
+p.runs[0].font.size = Pt(10)
+
+# 표 삽입 - 1행 2열의 표 만들기 
+table = doc.add_table(rows = 1, cols = 2)
+
+# 표 사이즈 조정
+table.columns[0].width = Cm(1)
+table.columns[1].width = Cm(6)
+
+
+# 만든 표의 스타일을 가장 기본 스타일인 'Table Grid' 로 설정 
+table.style = doc.styles['Table Grid']
+
+
+first_row = table.rows[0].cells
+
+cell_color(first_row)
+
+# 표 사이즈 재 조정
+first_row[0].width = Cm(2)
+first_row[1].width = Cm(12)
+
+first_row[0].text = '종목'
+first_row[1].text = '내용'
+
+pre_temp = 0
+
+for i in range(len(title1)*2):
+    data = table.add_row().cells
+
+    if i%2 == 0:
+        data[0].text = title1[i//2]
+        data[1].text = stext1[i//2]
+    else:
+        data[1].text = text1[i//2]
+        data[0].merge(pre_temp)
+
+    pre_temp = data[0]
+
+print("3. 코스닥 완료")
+
+
+p = doc.add_paragraph()
+p.add_run("\n").bold = True
+p.add_run("<코스피>").bold = True
+p.runs[0].font.size = Pt(10)
+
+# 표 삽입 - 1행 2열의 표 만들기 
+table = doc.add_table(rows = 1, cols = 2)
+
+# 표 사이즈 조정
+table.columns[0].width = Cm(1)
+table.columns[1].width = Cm(6)
+
+
+# 만든 표의 스타일을 가장 기본 스타일인 'Table Grid' 로 설정 
+table.style = doc.styles['Table Grid']
+
+
+first_row = table.rows[0].cells
+
+cell_color(first_row)
+
+# 표 사이즈 재 조정
+first_row[0].width = Cm(2)
+first_row[1].width = Cm(12)
+
+first_row[0].text = '종목'
+first_row[1].text = '내용'
+
+pre_temp = 0
+
+for i in range(len(title2)*2):
+    data = table.add_row().cells
+
+    if i%2 ==0:
+        data[1].text = stext2[i//2]
+        data[0].text = title2[i//2]
+    else:
+        data[1].text = text2[i//2]
+        data[0].merge(pre_temp)
+
+    pre_temp = data[0]
+
+print("3. 코스피 완료")
+
+
+
+################################ 4. 시장 주도 종목 정리 ########################################
+doc.add_heading('4. 시장 주도 종목 정리 : ', level = 1)
 
 
 try:
@@ -390,9 +490,10 @@ try:
         p.add_run("\n")
         add_hyperlink(p, link_list[index], link_list[index])
 except:pass
-################################ 4-1. 그 외 특징종목 정리 ########################################
 
-doc.add_heading('4-1. 그 외 특징주 정리 : ', level = 1)
+################################ 5. 그 외 특징종목 정리 ########################################
+
+doc.add_heading('5. 그 외 특징주 정리 : ', level = 1)
 
 title_list, link_list = Kangwon_stocks_info.scrape_stocks_info()
 
@@ -401,178 +502,11 @@ for index in range(0,len(title_list)):
     p.add_run('\n')
     add_hyperlink(p, link_list[index], link_list[index])
 
-print("4-1. 그 외 특징종목 정리 완료")
-
-################################ 4-2. 시간외 특징주  ######################################### 
-
-doc.add_heading('4-2. 시간 외 특징주 정리 : ', level = 1)
-
-try:
-    date,stock_name,contents, percent =  Kangwon_stocks_info.stock_extra_time()
-except:
-    pass
-
-p = doc.add_paragraph()
-p.add_run("<시간외 특징주>").bold = True
-p.runs[0].font.size = Pt(10)
-
-# 표 삽입 - 1행 4열의 표 만들기 
-table = doc.add_table(rows = 1, cols = 4)
-
-table.columns[0].width = Cm(3)
-table.columns[1].width = Cm(3)
-table.columns[2].width = Cm(3)
-table.columns[3].width = Cm(4)
-
-# 만든 표의 스타일을 가장 기본 스타일인 'Table Grid' 로 설정 
-table.style = doc.styles['Table Grid']
-
-first_row = table.rows[0].cells
-
-cell_color(first_row)
-
-first_row[0].text = '날짜'
-first_row[1].text = '종목'
-first_row[2].text = '등락률(%)'
-first_row[3].text = '비고'
-
-first_row[0].width = Cm(3)
-first_row[1].width = Cm(3)
-first_row[2].width = Cm(3)
-first_row[3].width = Cm(6)
-
-try:
-    for index in range(len(date)):
-
-        data = table.add_row().cells
-        data[0].text = date[index]
-        data[1].text = stock_name[index]
-        data[2].text = percent[index]+"%"
-        if (float(percent[index]) > 0):
-            data[2].paragraphs[0].runs[0].font.color.rgb = RGBColor(0xFF,0x00,0x00)
-        elif (float(percent[index]) < 0):
-            data[2].paragraphs[0].runs[0].font.color.rgb = RGBColor(0x00,0x00,0xFF)
-        else:
-            pass
-        data[3].text = contents[index]
-except:pass
-
-print("4-2. 시간 외 특징주 정리 완료")
-################################ 5. 장 마감후 주요 공시 ########################################
+print("5. 그 외 특징종목 정리 완료")
 
 
-doc.add_heading('5. 장 마감후 주요 공시: ', level = 1)
-
-try:
-    name, content = Kangwon_stocks_info.main_announce_AftMarket()
-except:
-    pass
-
-# 표 삽입 - 1행 2열의 표 만들기 
-table = doc.add_table(rows = 1, cols = 2)
-
-# 표 사이즈 조정
-table.columns[0].width = Cm(1)
-table.columns[1].width = Cm(6)
-
-
-# 만든 표의 스타일을 가장 기본 스타일인 'Table Grid' 로 설정 
-table.style = doc.styles['Table Grid']
-
-
-first_row = table.rows[0].cells
-
-cell_color(first_row)
-
-# 표 사이즈 재 조정
-first_row[0].width = Cm(2)
-first_row[1].width = Cm(12)
-
-first_row[0].text = '회사명'
-first_row[1].text = '공시내용'
-
-try : 
-    for i in range(len(name)):
-        data = table.add_row().cells
-
-        data[0].text = name[i]
-        data[1].text = content[i]
-except:
-    pass
-
-# if(name):
-#     for index in range(0,len(name)):
-#         p = doc.add_paragraph()
-#         p.add_run(name[index] + ":").bold = True
-#         p.add_run(" "+content[index])
-# else:
-#     pass
-    
-# if(Kangwon_stocks_info.newsSecondlist):
-#     for inform in Kangwon_stocks_info.newsSecondlist:
-#         p = doc.add_paragraph(inform)
-# elif(Kangwon_stocks_info.org_dic['contents']):
-#     for index in range(0,len(Kangwon_stocks_info.org_dic['contents'])):
-#         p = doc.add_paragraph()
-#         p.add_run(Kangwon_stocks_info.org_dic['name'][index]).bold = True
-#         p.add_run(" " + Kangwon_stocks_info.org_dic['contents'][index])
-# else:
-#     pass
-
-print("5. 장 마감후 주요 공시 완료")
-
-
-################################ 6. 주요 일정 ####################################### 
-doc.add_heading('6. 주요 일정: ', level = 1)
-
-title_list, link_list, Day_list = Kangwon_schedule.scrape_schedule()
-
-# 표 삽입 - 1행 2열의 표 만들기 
-table = doc.add_table(rows = 1, cols = 2)
-
-# 표 사이즈 조정
-table.columns[0].width = Cm(1)
-table.columns[1].width = Cm(6)
-
-
-# 만든 표의 스타일을 가장 기본 스타일인 'Table Grid' 로 설정 
-table.style = doc.styles['Table Grid']
-
-
-first_row = table.rows[0].cells
-
-cell_color(first_row)
-
-# 표 사이즈 재 조정
-first_row[0].width = Cm(2)
-first_row[1].width = Cm(12)
-
-first_row[0].text = '날짜'
-first_row[1].text = '제목'
-
-pre_temp = 0
-pre_value = 0
-
-for i in range(len(title_list)):
-    data = table.add_row().cells
-
-    # 현재 day_list value 와 이전 day_list value 를 비교하여 다를시 write 
-    data[1].text = title_list[i]
-
-    if(pre_value != Day_list[i]):
-        data[0].text = Day_list[i]
-    else:
-        if(i>=1):
-             # 현재 day_list value 와 이전 day_list value 를 비교하여 같을시 merge 
-            data[0].merge(pre_temp)
-    
-    # pre_value 와 pre_temp 를 저장 
-    pre_value = Day_list[i]
-    pre_temp = data[0]
-
-print("6. 주요 일정 완료")
-################################ 7. 주요 뉴스  ####################################### 
-doc.add_heading('7. 주요 뉴스: ', level = 1)
+################################ 6. 오전 주요 뉴스  ####################################### 
+doc.add_heading('6. 오전 주요 뉴스: ', level = 1)
 
 Kangwon_News.scrape_headline_news()
 
@@ -629,9 +563,10 @@ for i in range(0,len(title_list_guru)):
     p.add_run('\n')
     add_hyperlink(p,link_list_guru[i],link_list_guru[i])
 
-print("7. 주요 뉴스 완료")
-################################ 8. 관심 차트  ####################################### 
-doc.add_heading('8. 관심 차트: ', level = 1)
+print("6. 주요 뉴스 완료")
+
+################################ 7. 관심 차트  ####################################### 
+doc.add_heading('7. 관심 차트: ', level = 1)
 
 
 p = doc.add_paragraph()
@@ -688,296 +623,25 @@ for name in Kiwoom_condition.chart45sun:
     else:
         p.add_run(name +', ')
 
-print("8. 관심 차트 완료 ")
-################################ 9. 증권사 리포트  ####################################### 
-doc.add_heading('9. 증권사 리포트: ', level = 1)
+print("7. 관심 차트 완료 ")
 
-# stocks_info 수행 
-try:
-    stock_report.Stock_reports()
-except:
-    pass
-
-# 표 삽입 - 1행 5열의 표 만들기 
-table = doc.add_table(rows = 1, cols = 5)
-
-# 만든 표의 스타일을 가장 기본 스타일인 'Table Grid' 로 설정 
-
-
-table.style = doc.styles['Table Grid']
-table.autofit = False
-table.allow_autofit = False
-
-table.columns[0].width = Cm(1)
-table.columns[1].width = Cm(6)
-table.columns[2].width = Cm(1)
-table.columns[3].width = Cm(1)
-table.columns[4].width = Cm(6)
-
-# 폰트 사이즈 재 변경 
-style.font.size = Pt(10)
-
-# 표의 첫 행을 리스트로 가져오기 
-first_row = table.rows[0].cells
-
-cell_color(first_row)
-
-first_row[0].width = Cm(2)
-first_row[1].width = Cm(6)
-first_row[2].width = Cm(2)
-first_row[3].width = Cm(2)
-first_row[4].width = Cm(6)
-
-first_row[0].text = '작성일'
-first_row[1].text = '제목'
-first_row[2].text = '적정가격'
-first_row[3].text = '투자의견'
-first_row[4].text = '링크'
-
-for i in range(len(stock_report.list_report)):
-    
-    data = table.add_row().cells
-    data[0].text = stock_report.list_day[i].replace("2022-","")
-    data[1].text = stock_report.list_report[i]
-    data[2].text = stock_report.list_target_price[i]
-    data[3].text = stock_report.list_opinion[i]
-    cell_link = data[4].paragraphs[0]
-    add_hyperlink(cell_link, stock_report.list_url[i], stock_report.list_url[i])
- 
-
-print("9. 증권사 리포트 완료")
-################################ 10. 환율/원자재 가격 ####################################### 
-doc.add_heading('10. 환율/원자재 가격: ', level = 1)
-
-############################################# 달러 인덱스
-
-# 표 삽입 - 1행 5열의 표 만들기 
-table = doc.add_table(rows = 1, cols = 3)
-
-table.style = doc.styles['Table Grid']
-table.autofit = False
-table.allow_autofit = False
-
-
-table.columns[0].width = Cm(4)
-table.columns[1].width = Cm(2)
-table.columns[2].width = Cm(2)
-
-# 표의 첫 행을 리스트로 가져오기 
-first_row = table.rows[0].cells
-
-first_row[0].width = Cm(4)
-first_row[1].width = Cm(2)
-first_row[2].width = Cm(2)
-
-first_row[0].text = '분류'
-first_row[1].text = '가격'
-first_row[2].text = '변동(%)'
-
-cell_color(first_row)
-
-try: 
-    currency, d_index = Kangwon_stocks_info.scrape_major_indice_money()
-        
-    data = table.add_row().cells
-    data[0].text = "doller index"
-    data[1].text = d_index[0]
-
-    data[2].text = d_index[1]
-    if (float(d_index[1].strip("%")) > 0):
-        data[2].paragraphs[0].runs[0].font.color.rgb = RGBColor(0xFF,0x00,0x00)
-    elif (float(d_index[1].strip("%")) < 0):
-        data[2].paragraphs[0].runs[0].font.color.rgb = RGBColor(0x00,0x00,0xFF)
-    else:
-        pass
-except:
-    pass
-
-
-############################################# 환율 
-
-doc.add_paragraph('\n') # 한칸 띄우고 
-
-# 표 삽입 - 1행 5열의 표 만들기 
-table = doc.add_table(rows = 1, cols = 6)
-
-table.style = doc.styles['Table Grid']
-table.autofit = False
-table.allow_autofit = False
-
-
-table.columns[0].width = Cm(2)
-table.columns[1].width = Cm(2)
-table.columns[2].width = Cm(2)
-table.columns[3].width = Cm(2)
-table.columns[4].width = Cm(2)
-table.columns[5].width = Cm(2)
-
-
-# 표의 첫 행을 리스트로 가져오기 
-first_row = table.rows[0].cells
-
-first_row[0].width = Cm(2)
-first_row[1].width = Cm(2)
-first_row[2].width = Cm(2)
-first_row[3].width = Cm(2)
-first_row[4].width = Cm(2)
-first_row[5].width = Cm(2)
-
-
-first_row[0].text = '분류'
-first_row[1].text = '가격'
-first_row[2].text = '일간'
-first_row[3].text = '1주간'
-first_row[4].text = '1달간'
-first_row[5].text = 'YTD'
-
-
-cell_color(first_row)
-
-try: 
-    currency, d_index = Kangwon_stocks_info.scrape_major_indice_money()
-        
-    data = table.add_row().cells
-    data[0].text = "달러/원"
-    data[1].text = currency[0] # 가격 
-
-    data[2].text = currency[1]
-    if (float(currency[1].strip("%")) > 0):
-        data[2].paragraphs[0].runs[0].font.color.rgb = RGBColor(0xFF,0x00,0x00)
-    elif (float(currency[1].strip("%")) < 0):
-        data[2].paragraphs[0].runs[0].font.color.rgb = RGBColor(0x00,0x00,0xFF)
-    else:
-        pass
-
-    data[3].text = currency[2]
-    if (float(currency[2].strip("%")) > 0):
-        data[3].paragraphs[0].runs[0].font.color.rgb = RGBColor(0xFF,0x00,0x00)
-    elif (float(currency[2].strip("%")) < 0):
-        data[3].paragraphs[0].runs[0].font.color.rgb = RGBColor(0x00,0x00,0xFF)
-    else:
-        pass
-
-    data[4].text = currency[3]
-    if (float(currency[3].strip("%")) > 0):
-        data[4].paragraphs[0].runs[0].font.color.rgb = RGBColor(0xFF,0x00,0x00)
-    elif (float(currency[3].strip("%")) < 0):
-        data[4].paragraphs[0].runs[0].font.color.rgb = RGBColor(0x00,0x00,0xFF)
-    else:
-        pass
-
-    data[5].text = currency[4]
-    if (float(currency[4].strip("%")) > 0):
-        data[5].paragraphs[0].runs[0].font.color.rgb = RGBColor(0xFF,0x00,0x00)
-    elif (float(currency[4].strip("%")) < 0):
-        data[5].paragraphs[0].runs[0].font.color.rgb = RGBColor(0x00,0x00,0xFF)
-    else:
-        pass
-
-except:
-    pass
-
-
-############################################# 원자재 
-
-doc.add_paragraph('\n') # 한칸 띄우고 
-
-# 표 삽입 - 1행 5열의 표 만들기 
-table = doc.add_table(rows = 1, cols = 5)
-
-# 만든 표의 스타일을 가장 기본 스타일인 'Table Grid' 로 설정 
-
-table.style = doc.styles['Table Grid']
-table.autofit = False
-table.allow_autofit = False
-
-table.columns[0].width = Cm(1)
-table.columns[1].width = Cm(1)
-table.columns[2].width = Cm(1)
-table.columns[3].width = Cm(1)
-table.columns[4].width = Cm(1)
-
-# 폰트 사이즈 재 변경 
-style.font.size = Pt(10)
-
-# 표의 첫 행을 리스트로 가져오기 
-first_row = table.rows[0].cells
-
-first_row[0].width = Cm(3)
-first_row[1].width = Cm(2)
-first_row[2].width = Cm(2)
-first_row[3].width = Cm(2)
-first_row[4].width = Cm(2)
-
-first_row[0].text = '상품'
-first_row[1].text = '일간'
-first_row[2].text = '1주간'
-first_row[3].text = '1개월간'
-first_row[4].text = 'YTD'
-
-# 셀에 배경색 넣기
-from docx.oxml import parse_xml
-from docx.oxml.ns import nsdecls
-
-cell_color(first_row)
-
-# print(len(first_row))
-try: 
-    Kangwon_raw.scrape_rawM()
-    for i in range(len(Kangwon_raw.name_list)):
-        
-        data = table.add_row().cells
-        data[0].text = Kangwon_raw.name_list[i]
-        data[1].text = Kangwon_raw.day_rate_list[i]
-        if (float(Kangwon_raw.day_rate_list[i].strip("%")) > 0):
-            data[1].paragraphs[0].runs[0].font.color.rgb = RGBColor(0xFF,0x00,0x00)
-        elif (float(Kangwon_raw.day_rate_list[i].strip("%")) < 0):
-            data[1].paragraphs[0].runs[0].font.color.rgb = RGBColor(0x00,0x00,0xFF)
-        else:
-            pass
-        data[2].text = Kangwon_raw.week_rate_list[i]
-        if (float(Kangwon_raw.week_rate_list[i].strip("%")) > 0):
-            data[2].paragraphs[0].runs[0].font.color.rgb = RGBColor(0xFF,0x00,0x00)
-        elif (float(Kangwon_raw.week_rate_list[i].strip("%")) < 0):
-            data[2].paragraphs[0].runs[0].font.color.rgb = RGBColor(0x00,0x00,0xFF)
-        else:
-            pass
-        data[3].text = Kangwon_raw.month_rate_list[i]
-        if (float(Kangwon_raw.month_rate_list[i].strip("%")) > 0):
-            data[3].paragraphs[0].runs[0].font.color.rgb = RGBColor(0xFF,0x00,0x00)
-        elif (float(Kangwon_raw.month_rate_list[i].strip("%")) < 0):
-            data[3].paragraphs[0].runs[0].font.color.rgb = RGBColor(0x00,0x00,0xFF)
-        else:
-            pass
-        data[4].text = Kangwon_raw.YTD_rate_list[i]
-        if (float(Kangwon_raw.YTD_rate_list[i].strip("%")) > 0):
-            data[4].paragraphs[0].runs[0].font.color.rgb = RGBColor(0xFF,0x00,0x00)
-        elif (float(Kangwon_raw.YTD_rate_list[i].strip("%")) < 0):
-            data[4].paragraphs[0].runs[0].font.color.rgb = RGBColor(0x00,0x00,0xFF)
-        else:
-            pass
-except:
-    pass
-
-
-print("10. 환율 원자재 달러 인덱스 완료")
 
 ################################ 현재 작업경로에 저장  ####################################### 
 # doc.save('C:\\PYTHONWORKSPACE\\webscraping_basic\\webscraping_project\\2022\\kikawo_SD_리포트_{}.docx'.format(today_time))
-doc.save('C:\\PYTHONWORKSPACE\\webscraping_basic\\webscraping_project\\2022\\Y&R_리포트_{}_장마감.docx'.format(today_time))
+doc.save('C:\\PYTHONWORKSPACE\\webscraping_basic\\webscraping_project\\2022\\Y&R_리포트_{}_오전장.docx'.format(today_time))
 
 time.sleep(3)
 ################################ 목차 업데이트 ####################################### 
 word = win32com.client.DispatchEx("Word.Application")
-doc = word.Documents.Open('C:\\PYTHONWORKSPACE\\webscraping_basic\\webscraping_project\\2022\\Y&R_리포트_{}_장마감.docx'.format(today_time))
+doc = word.Documents.Open('C:\\PYTHONWORKSPACE\\webscraping_basic\\webscraping_project\\2022\\Y&R_리포트_{}_오전장.docx'.format(today_time))
 doc.TablesOfContents(1).Update()
 doc.Close(SaveChanges=True)
 word.Quit()
 
 time.sleep(5)
 ################################ pdf 변환 #################################################### 
-inputFile = "C:\\PYTHONWORKSPACE\\webscraping_basic\\webscraping_project\\2022\\Y&R_리포트_{}_장마감.docx".format(today_time)
-outputFile = "C:\\PYTHONWORKSPACE\\webscraping_basic\\webscraping_project\\2022\\Y&R_리포트_{}_장마감.pdf".format(today_time)
+inputFile = "C:\\PYTHONWORKSPACE\\webscraping_basic\\webscraping_project\\2022\\Y&R_리포트_{}_오전장.docx".format(today_time)
+outputFile = "C:\\PYTHONWORKSPACE\\webscraping_basic\\webscraping_project\\2022\\Y&R_리포트_{}_오전장.pdf".format(today_time)
 file = open(outputFile, "w")
 file.close()
 

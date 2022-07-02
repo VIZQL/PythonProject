@@ -315,13 +315,133 @@ def scrape_major_indice_money():
     return doller_kr, doller_index
 
 
+######################################## 시간외 단일가 상위 종목 #########################################
+
+def stock_extra_time(): 
+    stock_name = []
+    date = []
+    contents = []
+    percent = []
+
+    # today_time = datetime.date.today().strftime("%Y-%m-%d")  
+    # thatday = (datetime.date.today() - datetime.timedelta(2)).strftime("%Y-%m-%d") 
+    # print(thatday)
+
+
+    url = "https://www.kokstock.com/stock/memo.asp?q=21"
+
+    headers = {"User-Agent" : "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.75 Safari/537.36" }
+    res = requests.get(url, headers = headers)
+    res.raise_for_status()
+
+
+    soup = BeautifulSoup(res.text, "lxml")
+
+
+    table = soup.select_one("#divList > div.table-responsive.board-table > table > tbody")
+    table_row = table.select("tbody > tr")
+    
+    # 퍼센트 구하기 위해서 작업 
+    a = re.compile(r'(\(\+\S+\s?)')
+
+    first_date = table_row[0].find("td", attrs = {"class": "text-center"}).text #가장 최근일 구하기 
+
+    for news in table_row:
+        # title = news.find("div", attrs = {"class" : "cluster_text"}).a.get_text().strip()
+        tmp_date = news.find("td", attrs = {"class": "text-center"})
+        tmp_stock_name = news.find("td", attrs = {"class": "text-left"})
+        tmp_contents_pre = tmp_stock_name.find_next_sibling("td")
+
+        tmp1 = a.split(tmp_contents_pre.text)
+        tmp_percent = tmp1[1].strip("(").rstrip().strip('/')
+        tmp_contents = tmp1[0]
+
+
+        if tmp_date.text == first_date:
+            date.append(tmp_date.text)
+            stock_name.append(tmp_stock_name.a.text)
+            # stock_name.append(tmp_stock_name.a['data-nm'])
+            contents.append(tmp_contents)
+            percent.append(tmp_percent)
+
+        # print(tmp_date.text, tmp_stock_name.a.text, tmp_contents, tmp_percent)
+    
+    return date, stock_name, contents, percent
+
+
+
+def notable_stocks(info): 
+ 
+    name = []
+    textdata = []
+    title = []
+    stext = []
+    text = []
+
+    browser = ChromeOn(True)
+
+    try:
+        url = "https://vip.mk.co.kr/newSt/news/news_list.php?sCode=10001"
+        browser.get(url)
+
+        # li tag 들 검색하여 elems 에 넣기 
+        elems = browser.find_element(By.CSS_SELECTOR, "body > div:nth-child(12) > div > table > tbody > tr > td:nth-child(1) > table.table_6 > tbody")
+        elemss = elems.find_elements(By.CLASS_NAME, "title")
+        
+        # li tag text 중에서 장 마감 포함한 elem 찾아서 클릭하기 
+        for index, elem in enumerate(elemss):
+            if info in elem.text:
+                elem.find_element(By.TAG_NAME, "a").click()
+                break
+
+        soup = BeautifulSoup(browser.page_source, "lxml")
+
+
+        table = soup.select_one("#Conts > table.tbl > tbody")
+        table1 = table.find_all("tr")
+
+        for index, contents in enumerate(table1):
+            if index > 0:
+                textdata.append(contents.text)
+
+
+        li = [i for i in textdata if i != ""]
+        a = re.compile(r"(\(\d{6}\))")
+
+        for index,i in enumerate(li):
+            b = a.search(i)
+            if b and index+1 <= len(li):
+                s,e = b.span()
+                title.append(i[:s].strip())
+                stext.append(i[e:].strip())
+                text.append(li[index+1].strip())
+
+    except:
+        pass
+
+
+    # print(title)
+    # print(stext)
+    # print(text)
+
+    return title, stext, text
 
 
 if __name__ == "__main__":
     # scrape_stocks_info() # 네이버 특징주 
-    name, content = main_announce_AftMarket() 
-    print(name,content)
-    # scrape_stocks_info_saghan("부산주공")
+    # name, content = main_announce_AftMarket() 
+    # print(name,content)
+    # title_list, link_list = scrape_stocks_info_saghan("부산주공")
+    date,stock_name,contents, percent =  stock_extra_time()
+
+    print(date)
+    print(stock_name)
+    print(contents)
+    print(percent)
+
+
+    # print(title_list)
+    # print(title_list)
     # scrape_major_indice()
     # scrape_major_indice_money()
 

@@ -27,8 +27,8 @@ import reduncheck
 # 뉴스 기사 제한
 limit_news = 5
 
-except_info_list = ['마이데일리','뉴스핌','위키트리','스타뉴스', 'OSEN', '노컷', '뉴스1', '뉴스워커', '중도일보', '스포츠', '데일리안', '머니투데이', '아시아투데이', '제주', '브레이크', '연예', '전민일보', '인천','경기','프레시안']
-except_title_list = ['개관','개장','컴백','결혼','축제', '개봉', '기부', '박람회', '한정 판매', '공연', '음악회', '나눔', '티켓', '특별전', '문화제', '연주회', '캠페인', '콘서트', '숲길', '소식]']
+except_info_list = ['뉴시스','마이데일리','뉴스핌','위키트리','스타뉴스', 'OSEN', '노컷', '뉴스1', '뉴스워커', '중도일보', '스포츠', '데일리안', '머니투데이', '아시아투데이', '제주', '브레이크', '연예', '전민일보', '인천','경기','프레시안', '더팩트', '서울신문']
+except_title_list = ['개관','개장','컴백','결혼','축제', '개봉', '기부', '박람회', '한정 판매', '공연', '음악회', '나눔', '티켓', '특별전', '문화제', '연주회', '캠페인', '콘서트', '숲길', '소식]', r'\S\S시', r'\S\S군']
 
 def create_soup(url):
     
@@ -145,7 +145,8 @@ def scrape_schedule():
                         skip_flag = 1
 
                 for list in except_title_list:
-                    if (title.find(list) > -1):
+                    # if (title.find(list) > -1):
+                    if (re.search(list, title)):
                         skip_flag = 1
 
                 if (skip_flag == 0):
@@ -181,6 +182,7 @@ def scrape_schedule():
 
 if __name__ == "__main__":
     title, link, day = scrape_schedule() # 헤드라인 뉴스 정보 가져오기 
+    print(title,link,day)
 
 
 

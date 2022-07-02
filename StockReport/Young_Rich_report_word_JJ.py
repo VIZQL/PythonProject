@@ -50,7 +50,7 @@ from stock_report import*
 from Kangwon_schedule import*
 from Kangwon_raw import*
 from Kiwoom_condition import*
-
+                     
 import Kangwon_stocks_info
 import stock_report
 import Kangwon_News
@@ -62,7 +62,68 @@ import Kiwoom_condition
 from docx2pdf import convert
 
 
+from docx.text.paragraph import Paragraph
+import re
+
+Paragraph.text = property(lambda self: GetParagraphText(self))
+
+
 # -*- coding: utf-8 -*
+
+def insert_table(Itable,Otable):
+
+    for index in range(1,len(Itable.rows)):
+        data = Otable.add_row().cells
+        for i, cell in enumerate(data):
+            if(i==len(data)-1) and "http" in Itable.rows[index].cells[i].text:  # 마지막셀인지 체크 
+                data_last = GetParagraphText(Itable.rows[index].cells[i].paragraphs[0]).split("\n")
+                # print(data_last)
+                for line, data_cts in enumerate(data_last):
+                    if "http" in data_cts:
+                        p = cell.paragraphs[0]
+                        if line > 0:
+                            p.add_run("\n")
+                        add_hyperlink(p, data_cts, data_cts)
+                    else:
+                        cell.text = data_cts
+            else: # 마지막 셀이 아님 
+                cell.text = Itable.rows[index].cells[i].text
+
+
+def check_RGB(table, cell_num):
+    for i, rows in enumerate(table.rows):
+        if i > 0:
+            for ci, cell in enumerate(rows.cells):
+                if ci == cell_num: 
+                    value =  re.search(r"[+|-]?\d+[.]?[\d+]?", cell.text).group()
+                    # print(value)
+                    if(float(value) > 0):
+                        cell.paragraphs[0].runs[0].font.color.rgb = RGBColor(0xFF,0x00,0x00)
+                    elif (float(value) < 0):
+                        cell.paragraphs[0].runs[0].font.color.rgb = RGBColor(0x00,0x00,0xFF)
+                    else:
+                        pass
+
+
+
+# 표에서 하이퍼 링크를 가져오기 위한 함수 
+def GetParagraphText(paragraph):
+
+    def GetTag(element):
+        return "%s:%s" % (element.prefix, re.match("{.*}(.*)", element.tag).group(1))
+
+    text = ''
+    runCount = 0
+    for child in paragraph._p:
+        tag = GetTag(child)
+        if tag == "w:r":
+            text += paragraph.runs[runCount].text
+            runCount += 1
+        if tag == "w:hyperlink":
+            for subChild in child:
+                if GetTag(subChild) == "w:r":
+                    text += subChild.text
+    return text
 
 # 하이퍼 링크를 위한 함수 
 def add_hyperlink(paragraph, text, url):
@@ -129,18 +190,21 @@ def stock_news_return(name, news_list, link_list):
 ################################# 여기서부터 문서작업 #######################################
 
 # 새 워드 문서 만들기 
-## test
-with open("테스트.txt", "w" ) as f:
-    f.write("\n")
-    f.write("-"*100 + "\n")
-    f.write(str(datetime.datetime.now().strftime('%Y-%m-%d %H:%M')) + " :테스트 ")
-
-
 # doc = Document()
 doc = Document('C:\PYTHONWORKSPACE\\TP7_YR.docx')
 
+
 # today_time = datetime.today().strftime("%Y%m%d")   
 today_time = datetime.date.today().strftime("%Y%m%d")  
+# yesterday_time = datetime.datetime.strftime(datetime.datetime.now() - timedelta(1), '%Y%m%d')
+yesterday_time = datetime.datetime.strftime(datetime.date.today() - timedelta(1), '%Y%m%d')
+
+inputdoc = Document('C:\\PYTHONWORKSPACE\\webscraping_basic\\webscraping_project\\2022\\Y&R_리포트_{}_장마감.docx'.format(yesterday_time))
+
+######################### 일단 문서안에 모든 표를 가져옴 #################
+inputtables = inputdoc.tables
+
+# print(inputtables)
 
 # 헤딩 폰트 사이즈 변경
 font = doc.styles['Title'].font
@@ -242,16 +306,31 @@ for i in range(0,5):
 doc.add_heading('3. 시장 주도 종목 정리 : ', level = 1)
 
 
-try:
-    Kiwoom_condition.getConditionKiwoom()
-    title_list, link_list = scrape_stocks_info_saghan(Kiwoom_condition.sanghan_name)
-except:pass
+# try:
+#     Kiwoom_condition.getConditionKiwoom()
+#     title_list, link_list = scrape_stocks_info_saghan(Kiwoom_condition.sanghan_name)
+# except:pass
+from docx.oxml.text.paragraph import CT_P
+from docx.oxml.table import CT_Tbl
+from docx.table import Table
+from docx.text.paragraph import Paragraph
+
 
 
 ### 상한가 종목 정리 
 p = doc.add_paragraph()
 p.add_run("<상한가>").bold = True
 p.runs[0].font.size = Pt(10)
+
+
+
+# # 표의 모든값에 접근 
+# table = doc.tables[0]
+
+
+# 표 한번에 붙이는 방법인데 에러 남...
+# p._p.addnext(inputtables[1]._tbl)
+
 
 # 표 삽입 - 1행 3열의 표 만들기 
 table = doc.add_table(rows = 1, cols = 3)
@@ -274,18 +353,10 @@ first_row[0].width = Cm(4)
 first_row[1].width = Cm(4)
 first_row[2].width = Cm(6)
 
-try:
-    for index in range(len(Kiwoom_condition.sanghan_name)):
 
-        data = table.add_row().cells
-        tmp_name =  Kiwoom_condition.sanghan_name[index]
-        data[0].text = tmp_name
-        data[1].text = Kiwoom_condition.sanghan_tramount[index]
-        data[2].text = title_list[index]
-        p = data[2].paragraphs[0]
-        p.add_run("\n")
-        add_hyperlink(p, link_list[index], link_list[index])
-except:pass
+
+insert_table(inputtables[1], table)
+
 
 doc.add_paragraph('\n') # 한칸 띄우기 
 
@@ -320,26 +391,14 @@ first_row[1].width = Cm(3)
 first_row[2].width = Cm(3)
 first_row[3].width = Cm(3)
 
-try:
-    for index in range(len(Kiwoom_condition.trTop_name)):
+insert_table(inputtables[2], table)
 
-        data = table.add_row().cells
-        data[0].text = str(index+1)
-        data[1].text = Kiwoom_condition.trTop_name[index]
-        data[2].text = Kiwoom_condition.trTop_percent[index] + "%"
-        if (float(Kiwoom_condition.trTop_percent[index]) > 0):
-            data[2].paragraphs[0].runs[0].font.color.rgb = RGBColor(0xFF,0x00,0x00)
-        elif (float(Kiwoom_condition.trTop_percent[index]) < 0):
-            data[2].paragraphs[0].runs[0].font.color.rgb = RGBColor(0x00,0x00,0xFF)
-        else:
-            pass
-        data[3].text = Kiwoom_condition.trTop_amount[index]
-except:pass
+check_RGB(table, 2) 
 
 
 ### 주목 받은 종목 
 
-title_list, link_list = scrape_stocks_info_saghan(Kiwoom_condition.attention_name)
+# title_list, link_list = scrape_stocks_info_saghan(Kiwoom_condition.attention_name)
 
 doc.add_paragraph('\n') # 한칸 띄우기 
 
@@ -372,24 +431,11 @@ first_row[1].width = Cm(3)
 first_row[2].width = Cm(3)
 first_row[3].width = Cm(4)
 
-try:
-    for index in range(len(Kiwoom_condition.attention_name)):
+insert_table(inputtables[3], table)
 
-        data = table.add_row().cells
-        data[0].text = Kiwoom_condition.attention_name[index]
-        data[1].text = Kiwoom_condition.attention_percent[index] + "%"
-        if (float(Kiwoom_condition.attention_percent[index]) > 0):
-            data[1].paragraphs[0].runs[0].font.color.rgb = RGBColor(0xFF,0x00,0x00)
-        elif (float(Kiwoom_condition.attention_percent[index]) < 0):
-            data[1].paragraphs[0].runs[0].font.color.rgb = RGBColor(0x00,0x00,0xFF)
-        else:
-            pass
-        data[2].text = Kiwoom_condition.attention_amount[index]
-        data[3].text = title_list[index]
-        p = data[3].paragraphs[0]
-        p.add_run("\n")
-        add_hyperlink(p, link_list[index], link_list[index])
-except:pass
+check_RGB(table, 1) 
+
+
 ################################ 4-1. 그 외 특징종목 정리 ########################################
 
 doc.add_heading('4-1. 그 외 특징주 정리 : ', level = 1)
@@ -402,6 +448,7 @@ for index in range(0,len(title_list)):
     add_hyperlink(p, link_list[index], link_list[index])
 
 print("4-1. 그 외 특징종목 정리 완료")
+
 
 ################################ 4-2. 시간외 특징주  ######################################### 
 
@@ -458,15 +505,13 @@ try:
 except:pass
 
 print("4-2. 시간 외 특징주 정리 완료")
-################################ 5. 장 마감후 주요 공시 ########################################
+
+
+# ################################ 5. 장 마감후 주요 공시 ########################################
 
 
 doc.add_heading('5. 장 마감후 주요 공시: ', level = 1)
 
-try:
-    name, content = Kangwon_stocks_info.main_announce_AftMarket()
-except:
-    pass
 
 # 표 삽입 - 1행 2열의 표 만들기 
 table = doc.add_table(rows = 1, cols = 2)
@@ -491,38 +536,12 @@ first_row[1].width = Cm(12)
 first_row[0].text = '회사명'
 first_row[1].text = '공시내용'
 
-try : 
-    for i in range(len(name)):
-        data = table.add_row().cells
+insert_table(inputtables[5], table)
 
-        data[0].text = name[i]
-        data[1].text = content[i]
-except:
-    pass
 
-# if(name):
-#     for index in range(0,len(name)):
-#         p = doc.add_paragraph()
-#         p.add_run(name[index] + ":").bold = True
-#         p.add_run(" "+content[index])
-# else:
-#     pass
-    
-# if(Kangwon_stocks_info.newsSecondlist):
-#     for inform in Kangwon_stocks_info.newsSecondlist:
-#         p = doc.add_paragraph(inform)
-# elif(Kangwon_stocks_info.org_dic['contents']):
-#     for index in range(0,len(Kangwon_stocks_info.org_dic['contents'])):
-#         p = doc.add_paragraph()
-#         p.add_run(Kangwon_stocks_info.org_dic['name'][index]).bold = True
-#         p.add_run(" " + Kangwon_stocks_info.org_dic['contents'][index])
-# else:
-#     pass
 
 print("5. 장 마감후 주요 공시 완료")
-
-
-################################ 6. 주요 일정 ####################################### 
+# ################################ 6. 주요 일정 ####################################### 
 doc.add_heading('6. 주요 일정: ', level = 1)
 
 title_list, link_list, Day_list = Kangwon_schedule.scrape_schedule()
@@ -553,6 +572,8 @@ first_row[1].text = '제목'
 pre_temp = 0
 pre_value = 0
 
+# insert_table(inputtables[6], table)  주요 일정은 당일 다시 검색 해야함 
+
 for i in range(len(title_list)):
     data = table.add_row().cells
 
@@ -570,8 +591,8 @@ for i in range(len(title_list)):
     pre_value = Day_list[i]
     pre_temp = data[0]
 
-print("6. 주요 일정 완료")
-################################ 7. 주요 뉴스  ####################################### 
+print("6. 주요 일정")
+# ################################ 7. 주요 뉴스  ####################################### 
 doc.add_heading('7. 주요 뉴스: ', level = 1)
 
 Kangwon_News.scrape_headline_news()
@@ -629,8 +650,8 @@ for i in range(0,len(title_list_guru)):
     p.add_run('\n')
     add_hyperlink(p,link_list_guru[i],link_list_guru[i])
 
-print("7. 주요 뉴스 완료")
-################################ 8. 관심 차트  ####################################### 
+print("7. 주요 뉴스")
+# ################################ 8. 관심 차트  ####################################### 
 doc.add_heading('8. 관심 차트: ', level = 1)
 
 
@@ -658,45 +679,18 @@ cell_color(first_row)
 first_row[0].text = '분류'
 first_row[1].text = '종목'
 
-# 10일 선 
-data = table.add_row().cells
-data[0].text = '10일선'
-for name in Kiwoom_condition.chart8sun:
-    p = data[1].paragraphs[0]
-    if(name == Kiwoom_condition.chart8sun[-1]):
-        p.add_run(name)
-    else:
-        p.add_run(name +', ')
+insert_table(inputtables[7], table)  
 
-# 20일선 
-data = table.add_row().cells 
-data[0].text = '20일선'
-for name in Kiwoom_condition.chart20sun:
-    p = data[1].paragraphs[0]
-    if(name == Kiwoom_condition.chart20sun[-1]):
-        p.add_run(name)
-    else:
-        p.add_run(name +', ')
 
-# 45일선 
-data = table.add_row().cells 
-data[0].text = '45일선'
-for name in Kiwoom_condition.chart45sun:
-    p = data[1].paragraphs[0]
-    if(name == Kiwoom_condition.chart45sun[-1]):
-        p.add_run(name)
-    else:
-        p.add_run(name +', ')
-
-print("8. 관심 차트 완료 ")
+print("8. 관심 차트")
 ################################ 9. 증권사 리포트  ####################################### 
 doc.add_heading('9. 증권사 리포트: ', level = 1)
 
 # stocks_info 수행 
-try:
-    stock_report.Stock_reports()
-except:
-    pass
+# try:
+#     stock_report.Stock_reports()
+# except:
+#     pass
 
 # 표 삽입 - 1행 5열의 표 만들기 
 table = doc.add_table(rows = 1, cols = 5)
@@ -734,18 +728,20 @@ first_row[2].text = '적정가격'
 first_row[3].text = '투자의견'
 first_row[4].text = '링크'
 
-for i in range(len(stock_report.list_report)):
+insert_table(inputtables[8], table)  # 리포트는 전일것을 사용해야함 
+
+# for i in range(len(stock_report.list_report)):
     
-    data = table.add_row().cells
-    data[0].text = stock_report.list_day[i].replace("2022-","")
-    data[1].text = stock_report.list_report[i]
-    data[2].text = stock_report.list_target_price[i]
-    data[3].text = stock_report.list_opinion[i]
-    cell_link = data[4].paragraphs[0]
-    add_hyperlink(cell_link, stock_report.list_url[i], stock_report.list_url[i])
+#     data = table.add_row().cells
+#     data[0].text = stock_report.list_day[i].replace("2022-","")
+#     data[1].text = stock_report.list_report[i]
+#     data[2].text = stock_report.list_target_price[i]
+#     data[3].text = stock_report.list_opinion[i]
+#     cell_link = data[4].paragraphs[0]
+#     add_hyperlink(cell_link, stock_report.list_url[i], stock_report.list_url[i])
  
 
-print("9. 증권사 리포트 완료")
+
 ################################ 10. 환율/원자재 가격 ####################################### 
 doc.add_heading('10. 환율/원자재 가격: ', level = 1)
 
@@ -792,7 +788,6 @@ try:
         pass
 except:
     pass
-
 
 ############################################# 환율 
 
@@ -960,29 +955,26 @@ except:
     pass
 
 
-print("10. 환율 원자재 달러 인덱스 완료")
-
 ################################ 현재 작업경로에 저장  ####################################### 
 # doc.save('C:\\PYTHONWORKSPACE\\webscraping_basic\\webscraping_project\\2022\\kikawo_SD_리포트_{}.docx'.format(today_time))
-doc.save('C:\\PYTHONWORKSPACE\\webscraping_basic\\webscraping_project\\2022\\Y&R_리포트_{}_장마감.docx'.format(today_time))
+doc.save('C:\\PYTHONWORKSPACE\\webscraping_basic\\webscraping_project\\2022\\Y&R_리포트_{}_장시작전.docx'.format(today_time))
 
-time.sleep(3)
+time.sleep(2)
 ################################ 목차 업데이트 ####################################### 
 word = win32com.client.DispatchEx("Word.Application")
-doc = word.Documents.Open('C:\\PYTHONWORKSPACE\\webscraping_basic\\webscraping_project\\2022\\Y&R_리포트_{}_장마감.docx'.format(today_time))
+doc = word.Documents.Open('C:\\PYTHONWORKSPACE\\webscraping_basic\\webscraping_project\\2022\\Y&R_리포트_{}_장시작전.docx'.format(today_time))
 doc.TablesOfContents(1).Update()
 doc.Close(SaveChanges=True)
 word.Quit()
 
 time.sleep(5)
-################################ pdf 변환 #################################################### 
-inputFile = "C:\\PYTHONWORKSPACE\\webscraping_basic\\webscraping_project\\2022\\Y&R_리포트_{}_장마감.docx".format(today_time)
-outputFile = "C:\\PYTHONWORKSPACE\\webscraping_basic\\webscraping_project\\2022\\Y&R_리포트_{}_장마감.pdf".format(today_time)
+############################################### pdf 변환 ######################################################## 
+inputFile = "C:\\PYTHONWORKSPACE\\webscraping_basic\\webscraping_project\\2022\\Y&R_리포트_{}_장시작전.docx".format(today_time)
+outputFile = "C:\\PYTHONWORKSPACE\\webscraping_basic\\webscraping_project\\2022\\Y&R_리포트_{}_장시작전.pdf".format(today_time)
 file = open(outputFile, "w")
 file.close()
 
 convert(inputFile, outputFile)
-
 
 # 저장된 문서 불러오기 
 # doc = Document('절대경로\docx') # 절대 경로 불러오기 
