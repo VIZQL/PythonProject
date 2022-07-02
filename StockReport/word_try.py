@@ -133,6 +133,9 @@ def stock_news_return(name, news_list, link_list):
 doc = Document('C:\PYTHONWORKSPACE\\TP2.docx')
 
 today_time = datetime.date.today().strftime("%Y%m%d")  
+yesterday_time = datetime.strftime(datetime.now() - timedelta(1), '%Y%m%d')
+
+inputdoc = Document('C:\\PYTHONWORKSPACE\\webscraping_basic\\webscraping_project\\2022\\Y&R_리포트_{}.docx'.format(yesterday_time))
 
 # 헤딩 폰트 사이즈 변경
 font = doc.styles['Title'].font

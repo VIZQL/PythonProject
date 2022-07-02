@@ -57,7 +57,7 @@ def Stock_reports():
         # 'link' : i.find("a")["href"])
 
         list_report.append(i.find("strong").text)
-        list_url.append("http://consensus.hankyung.com" + i.find("a")["href"])
+        list_url.append("http://hkconsensus.hankyung.com" + i.find("a")["href"])
         list_target_price.append(i.find("td", class_='text_r txt_number').text)
         list_opinion.append(i.select_one('td:nth-of-type(4)').get_text(strip=True))
         list_day.append(i.find("td", class_ = "first txt_number").text) 
